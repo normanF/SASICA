@@ -130,9 +130,12 @@ if any(~noplot)
     isubplot = 1;
 end
 
-
+ncomp= size(EEG.icaact,1); % ncomp is number of components
+if ncomp == 0
+    ncomp = size(EEG.icaweights,1);
+end
 if ~nocompute
-    EEG.icaact = eeg_getica(EEG);
+    EEG.icaact = eeg_getica(EEG,1:ncomp);
     EEG.reject.SASICA = [];
     for ifield = 1:size(rejfields,1)
         %     EEG.reject.SASICA.(rejfields{ifield}) = false(1,ncomp);
@@ -140,7 +143,6 @@ if ~nocompute
     end
     fprintf('Computing selection methods...\n')
 end
-ncomp= size(EEG.icaact,1); % ncomp is number of components
 if cfg.autocorr.enable
     rejects(1) = 1;
     disp('Autocorrelation.')
