@@ -100,7 +100,7 @@ else
     mkersize = 20;
 end
 
-if isempty(EEG.icawinv)
+if isempty(EEG.icaact) && isempty(EEG.icawinv)
     errordlg('No ica weights in the current EEG dataset! Compute ICA on your data first.')
     error('No ica weights! Compute ICA on your data first.')
 end
@@ -117,7 +117,6 @@ rejfields = {'icarejautocorr' 'Autocorrelation' [         0         0    1.0000]
     'icarejMARA' 'MARA selections' [    .5 .5 0]
     };
 
-ncomp= size(EEG.icawinv,2); % ncomp is number of components
 rejects = zeros(size(rejfields,1),1);
 
 if numel(noplot) == 1
@@ -133,8 +132,7 @@ end
 
 
 if ~nocompute
-    icaacts = eeg_getdatact(EEG,'component',1:ncomp);
-    EEG.icaact = icaacts;
+    EEG.icaact = eeg_getica(EEG);
     EEG.reject.SASICA = [];
     for ifield = 1:size(rejfields,1)
         %     EEG.reject.SASICA.(rejfields{ifield}) = false(1,ncomp);
@@ -142,6 +140,7 @@ if ~nocompute
     end
     fprintf('Computing selection methods...\n')
 end
+ncomp= size(EEG.icaact,1); % ncomp is number of components
 if cfg.autocorr.enable
     rejects(1) = 1;
     disp('Autocorrelation.')
@@ -154,7 +153,7 @@ if cfg.autocorr.enable
         Ncorrint=round(autocorrint/(1000/EEG.srate)); % number of samples for lag
         rej = false(1,ncomp);
         for k=1:ncomp
-            y=icaacts(k,:,:);
+            y=EEG.icaact(k,:,:);
             yy=xcorr(mean(y,3),Ncorrint,'coeff');
             autocorr(k) = yy(1);
         end
@@ -268,10 +267,10 @@ if cfg.trialfoc.enable
         % Find components with focal trial activity (those that have activity
         % on just a few trials and are almost zero on others)
         %----------------------------------------------------------------
-        if ndims(icaacts) < 3
+        if ndims(EEG.icaact) < 3
             error('This method cannot be used on continuous data (no ''trials''!)');
         end
-        myact =sort(abs(zscore(range(icaacts,2),[],3)),3,'descend'); % sorts standardized range of trial activity
+        myact =sort(abs(zscore(range(EEG.icaact,2),[],3)),3,'descend'); % sorts standardized range of trial activity
         focaltrialout = readauto(focaltrialout,myact(:,:,1)','+');
         % in descending order
         rej = myact(:,:,1) > focaltrialout;
@@ -326,7 +325,7 @@ if cfg.SNR.enable
         POIpts = timepts(snrPOI);
         BLpts = timepts(snrBL);
         
-        zz = zscore(icaacts,[],2);% zscore along time
+        zz = zscore(EEG.icaact,[],2);% zscore along time
         av1 = mean(zz(:,POIpts,:),3); % average activity in POI across trials
         av2 = mean(zz(:,BLpts,:),3); % activity in baseline acros trials
         SNR = std(av1,[],2)./std(av2,[],2); % ratio of the standard deviations of activity and baseline
@@ -443,7 +442,7 @@ if cfg.EOGcorr.enable
             disp('no Horizontal EOG channels...');
             noH = 1;
         end
-        ICs = icaacts(:,:)';
+        ICs = EEG.icaact(:,:)';
         if ~noV
             VEOG = VEOG(:);
             cV  = abs(corr(ICs,VEOG))';
@@ -530,7 +529,7 @@ if cfg.chancorr.enable
                 [chan cellchannames channames] = chnb(channames);
             end
             chanEEG = EEG.data(chan,:)';
-            ICs = icaacts(:,:)';
+            ICs = EEG.icaact(:,:)';
             c  = abs(corr(ICs,chanEEG))';
             corthresh = mean(readauto(corthresh,c,'+'));
             rej = c > corthresh ;
