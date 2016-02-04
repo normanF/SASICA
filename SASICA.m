@@ -990,6 +990,9 @@ function resetprefs_Callback(hObject, eventdata, handles)
 
 def = getdefs;
 setpref('SASICA','cfg',def);
+try
+    rmpref('SASICA','overwriteEEG')
+end
 SASICA(def)
 
 function def = getdefs
