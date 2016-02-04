@@ -1,6 +1,63 @@
 % [cfg] = ft_SASICA(cfg,comp,data)
 %
-% This is a wrapper to eeg_SASICA. See help eeg_SASICA for more info.
+% Use SASICA selection methods to detect components with specific signal
+% properties, as described in
+%   Chaumon M, Bishop DV, Busch NA. A Practical Guide to the Selection of
+%   Independent Components of the Electroencephalogram for Artifact
+%   Correction. Journal of neuroscience methods. 2015
+%
+% Inputs: - cfg: a structure with field
+%               layout: that will be passed to ft_prepare_layout
+%              as well as any of the following fields:
+%               autocorr:   detect components with low autocorrelation
+%               focalcomp   detect focal components in sensor space
+%               trialfoc    detect focal components in trial space
+%               resvar      Not implemented.
+%               SNR         detect components with low signal to noise
+%                           ratio across trials between two time windows.
+%               EOGcorr     detect components with high correlation with
+%                           vertical and horizontal EOG channels
+%               chancorr    detect components with high correlation with
+%                           any channel
+%               FASTER      use FASTER (Nolan et al. 2010) detection
+%                           methods.
+%               ADJUST      use ADJUST (Mongon et al. 2011) detection
+%                           methods
+%               MARA        use MARA (Winkler et al. 2011) detection
+%                           methods
+%               opts        set various options: noplot, nocompute, and
+%                           FontSize
+%
+%           For more detailed information, see doc eeg_SASICA
+%
+%       For an example cfg structure, run cfg = SASICA('getdefs')
+%
+%        - comp: the output of ft_componentanalysis
+%        - data: the output of ft_preprocessing
+%               it is important that data.elec is populated
+%
+% output: - cfg structure with additional field reject containing the
+%           results of the selection methods
+%
+%
+%   v0 Maximilien Chaumon Feb 2016
+%
+%   SASICA is a software that helps select independent components of
+%   the electroencephalogram based on various signal measures.
+%     Copyright (C) 2014  Maximilien Chaumon
+%
+%     This program is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+%
+%     This program is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+%
+%     You should have received a copy of the GNU General Public License
+%     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 function [cfg] = ft_SASICA(cfg,comp,data)
@@ -41,34 +98,42 @@ else
     EEG.data = cat(3,data.trial{:});
 end
 
-if not(cfg.opts.noplot)
-    try
-        evalin('base','EEG;');
-        try
-            rep = uigetpref('SASICA','overwriteEEG','Overwrite another EEG in memory?',...
-                {'I need to create an EEG variable in your base workspace.' 'Currently, there is another one can I overwrite it?'},...
-                'Yes|Cancel');
-            if strcmpi(rep,'cancel')
-                try
-                    rmpref('SASICA','overwriteEEG')
-                end
-                error()
-            end
-        catch
-            disp('Rename the EEG variable in your base workspace to continue')
-            return
-        end
-    end
-end
+% if not(cfg.opts.noplot)
+%     try
+%         evalin('base','EEG;');
+%         try
+%             rep = uigetpref('SASICA','overwriteEEG','Overwrite another EEG in memory?',...
+%                 {'I need to create an EEG variable in your base workspace.' 'Currently, there is another one can I overwrite it?'},...
+%                 'Yes|Cancel');
+%             if strcmpi(rep,'cancel')
+%                 try
+%                     rmpref('SASICA','overwriteEEG')
+%                 end
+%                 error()
+%             end
+%         catch
+%             disp('Rename the EEG variable in your base workspace to continue')
+%             return
+%         end
+%     end
+% end
 
 
 EEG = eeg_SASICA(EEG,cfg);
 
+
 if ~cfg.opts.noplot
+    mainfigs = findobj('-regexp','Name','Reject .* -- SASICA');
+    okbuts = findobj(mainfigs,'string','OK');
+    okcb = ['delete(findobj(''-regexp'',''name'',''pop_selectcomps.* -- SASICA''));delete(findobj(''-regexp'',''name'',''Automatic component rejection measures''));' ...
+        'cfg.reject = EEG.reject;'];
+    set(okbuts,'Callback',okcb);
+
     assignin('base','EEG',EEG);
+else
+    cfg.reject = EEG.reject;
 end
 
-cfg.reject = EEG.reject;
 
 
 function [varargout] = rep2struct(varargin)
