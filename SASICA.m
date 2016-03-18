@@ -1014,6 +1014,12 @@ def.SNR.snrPOI = [0 Inf];% period of interest (signal)
 def.SNR.snrBL = [-Inf 0];% period of no interest (noise)
 def.SNR.snrcut = 1;% SNR below this threshold will be dropped
 
+def.SIM.enable = true;
+def.SIM.thresh = .7;
+
+def.REP.enable = true;
+def.REP.thresh = 4;
+
 def.EOGcorr.enable = true;
 def.EOGcorr.corthreshV = 'auto 4';% threshold correlation with vertical EOG
 def.EOGcorr.Veogchannames = [];% vertical channel(s)
