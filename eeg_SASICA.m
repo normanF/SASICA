@@ -15,9 +15,16 @@
 %                               activity, with same algorhithm as focal
 %                               components above. Results similar to trial
 %                               variability.
+%              SIM:             Similarity index detects components that
+%                               are highly dissimilar with the average
+%                               across trials during a specific time
+%                               window.
 %              Signal to noise ratio: detects components with weak signal
 %                               to noise ratio between arbitrary baseline
-%                               and interest time windows.
+%                               (BL) and period of interest (POI).
+%              REP:             Relative power detects components that have
+%                               ratio of power during response POI/BL below
+%                               threshold.
 %              Dipole fit residual variance: detects components with high
 %                               residual variance after subtraction of the
 %                               forward dipole model. Note that the inverse
