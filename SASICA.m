@@ -33,14 +33,14 @@
 %                               L., & Buiatti, M. (2011). ADJUST: An
 %                               automatic EEG artifact detector based on
 %                               the joint use of spatial and temporal
-%                               features. Psychophysiology, 48(2), 229Ã¢ÂÂ240.
+%                               features. Psychophysiology, 48(2), 229????????????240.
 %                               doi:10.1111/j.1469-8986.2010.01061.x)
 %              FASTER selection: use FASTER routines to select components
 %                               (see Nolan, H., Whelan, R., & Reilly, R. B.
 %                               (2010). FASTER: Fully Automated Statistical
 %                               Thresholding for EEG artifact Rejection.
 %                               Journal of Neuroscience Methods, 192(1),
-%                               152Ã¢ÂÂ162. doi:16/j.jneumeth.2010.07.015)
+%                               152????????????162. doi:16/j.jneumeth.2010.07.015)
 %              MARA selection:  use MARA classification engine to select components
 %                               (see Winkler I, Haufe S, Tangermann M.
 %                               2011. Automatic Classification of
@@ -820,7 +820,7 @@ function [nb,channame,strnames] = chnb(channame, varargin)
 %                   structure exists in the caller workspace.
 %   names         - Channel names, cell array of strings.
 %   strnames      - Channel names, one line character array.
-error(nargchk(1,2,nargin));
+narginchk(1,2);
 if nargin == 2
     labels = varargin{1};
 else
@@ -903,7 +903,7 @@ function idx = regexpcell(c,pat, cmds)
 % v2 Maximilien Chaumon 02/03/2010 changed input method.
 %       inv,ignorecase,exact,combine are replaced by cmds
 
-error(nargchk(2,3,nargin))
+narginchk(2,3)
 if not(iscellstr(c))
     error('input c must be a cell array of strings');
 end

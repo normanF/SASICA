@@ -202,7 +202,7 @@ if cfg.autocorr.enable
         plot(toplot,'o','color',rejfields{1,3})
         for i = 1:numel(autocorr)
             h = scatter(i,autocorr(i),mkersize,'k','filled');
-            cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 50] })'');', inputname(1), i, i);
+            cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 80] })'');', inputname(1), i, i);
             set(h,'buttondownfcn',cb);
         end
     end
@@ -252,7 +252,7 @@ if cfg.focalcomp.enable
         title('Components with focal activity')
         for i = 1:numel(mywt(1,:))
             h = scatter(i,mywt(1,i),mkersize,'k','filled');
-            cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 50] })'');', inputname(1), i, i);
+            cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 80] })'');', inputname(1), i, i);
             set(h,'buttondownfcn',cb);
         end
     end
@@ -301,7 +301,7 @@ if cfg.trialfoc.enable
             plot(xl(2)-diff(xl)/20,yl(2)-diff(yl)/20,'marker','.','color',rejfields{3,3},'markersize',40)
             for i = 1:numel(myact(:,:,1))
                 h = scatter(i,myact(i),mkersize,'k','filled');
-                cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 50] })'');', inputname(1), i, i);
+                cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 80] })'');', inputname(1), i, i);
                 set(h,'buttondownfcn',cb);
             end
             
@@ -355,7 +355,7 @@ if cfg.SNR.enable
         plot(xl(2)-diff(xl)/20,yl(2)-diff(yl)/20,'marker','.','color',rejfields{4,3},'markersize',40)
         for i = 1:numel(SNR)
             h = scatter(i,SNR(i),mkersize,'k','filled');
-            cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 50] })'');', inputname(1), i, i);
+            cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 80] })'');', inputname(1), i, i);
             set(h,'buttondownfcn',cb);
         end
         title({'Signal to noise ratio between' ['Time of interest ' num2str(snrPOI,'%g ') ' and Baseline ' num2str(snrBL,'%g ') ' ms.']})
@@ -371,40 +371,91 @@ if cfg.resvar.enable
     disp('Residual variance thresholding.')
     %% High residual variance
     struct2ws(cfg.resvar);
-    if ~nocompute
-        resvar = 100*[EEG.dipfit.model.rv];
-        rej = resvar > thresh;
-        
-        EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','')) = resvar;
-        EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','thresh')) = thresh;
-        EEG.reject.SASICA.(rejfields{5,1}) = rej;
-    else
-        resvar = EEG.reject.SASICA.(strrep(rejfields{5,1},'rej',''));
-        thresh = EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','thresh'));
-        rej = EEG.reject.SASICA.(rejfields{5,1});
-    end
-    %----------------------------------------------------------------
-    if ~noplot(5)
-        subplot(2,3,isubplot);cla;isubplot = isubplot+1;
-        set(gca,'fontsize',FontSize)
-        plot(resvar,'k','linestyle','none');
-        hold on
-        xlim([0 ncomp+1]);
-        ylim([0 100]);
-        xl = xlim; yl = ylim;
-        hline(thresh,'r');
-        toplot = resvar;
-        toplot(toplot < thresh) = NaN;
-        plot(toplot,'o','color',rejfields{5,3})
-        plot(xl(2)-diff(xl)/20,yl(2)-diff(yl)/20,'marker','.','color',rejfields{5,3},'markersize',40)
-        for i = 1:numel(resvar)
-            h = scatter(i,resvar(i),mkersize,'k','filled');
-            cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 50] })'');', inputname(1), i, i);
-            set(h,'buttondownfcn',cb);
-        end
-        title({'Residual variance of dipole fit'})
-        xlabel('Components')
-        ylabel('RV (%)')
+    % editing this module to incoporate dipfits with 2 dipoles stored in
+    % EEG.dipfit2
+    switch isfield(EEG,'dipfit2')
+        case 1
+            if ~nocompute
+                resvar = 100*[EEG.dipfit.model.rv];
+                resvar2 = 100*[EEG.dipfit2.model.rv];
+                rej = resvar > thresh;
+                
+                EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','')) = resvar;
+                EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','thresh')) = thresh;
+                EEG.reject.SASICA.(rejfields{5,1}) = rej;
+                
+                EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','2dip')) = resvar2;
+                EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','thresh2dip')) = thresh;
+            else
+                resvar = EEG.reject.SASICA.(strrep(rejfields{5,1},'rej',''));
+                thresh = EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','thresh'));
+                resvar2 = EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','2dip'));
+                rej = EEG.reject.SASICA.(rejfields{5,1});
+            end
+            %----------------------------------------------------------------
+            if ~noplot(5)
+                subplot(2,3,isubplot);cla;isubplot = isubplot+1;
+                set(gca,'fontsize',FontSize)
+                plot(resvar,'k','linestyle','none'); % no actual plotting: 'linestyle','none'
+                hold on
+                plot(resvar2,'b','linestyle','none'); % 
+                xlim([0 ncomp+1]);
+                ylim([0 100]);
+                xl = xlim; yl = ylim;
+                hline(thresh,'r');
+                toplot = resvar;
+                toplot2 = resvar2;
+                toplot(toplot < thresh) = NaN;
+                toplot2(toplot2 < thresh) = NaN;
+                plot(toplot,'o','color',rejfields{5,3}) % plotting dipoles exceeding threshold
+                plot(toplot2,'o','color',[0.75 0 0.75])
+                plot(xl(2)-diff(xl)/20,yl(2)-diff(yl)/20,'marker','.','color',rejfields{5,3},'markersize',40) % feature identifier (dot in same color as single dipoles exceeding threshold)
+                for i = 1:numel(resvar)
+                    h = scatter(i,resvar(i),mkersize,'k','filled'); % plotting single dipole
+                    scatter(i,resvar2(i),mkersize-5,'b','filled'); % plotting symmetrical dipoles
+                    cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 80] })'');', inputname(1), i, i);
+                    set(h,'buttondownfcn',cb);
+                end
+                title({'Residual variance of dipole fit'})
+                xlabel('Components')
+                ylabel('RV (%)')
+            end
+        case 0
+            if ~nocompute
+                resvar = 100*[EEG.dipfit.model.rv];
+                rej = resvar > thresh;
+                
+                EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','')) = resvar;
+                EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','thresh')) = thresh;
+                EEG.reject.SASICA.(rejfields{5,1}) = rej;
+            else
+                resvar = EEG.reject.SASICA.(strrep(rejfields{5,1},'rej',''));
+                thresh = EEG.reject.SASICA.(strrep(rejfields{5,1},'rej','thresh'));
+                rej = EEG.reject.SASICA.(rejfields{5,1});
+            end
+            %----------------------------------------------------------------
+            if ~noplot(5)
+                subplot(2,3,isubplot);cla;isubplot = isubplot+1;
+                set(gca,'fontsize',FontSize)
+                plot(resvar,'k','linestyle','none');
+                hold on
+                xlim([0 ncomp+1]);
+                ylim([0 100]);
+                xl = xlim; yl = ylim;
+                hline(thresh,'r');
+                toplot = resvar;
+                toplot(toplot < thresh) = NaN;
+                plot(toplot,'o','color',rejfields{5,3})
+                plot(xl(2)-diff(xl)/20,yl(2)-diff(yl)/20,'marker','.','color',rejfields{5,3},'markersize',40)
+                for i = 1:numel(resvar)
+                    h = scatter(i,resvar(i),mkersize,'k','filled');
+                    cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 80] })'');', inputname(1), i, i);
+                    set(h,'buttondownfcn',cb);
+                end
+                title({'Residual variance of dipole fit'})
+                xlabel('Components')
+                ylabel('RV (%)')
+            end
     end
     
     %----------------------------------------------------------------
@@ -510,7 +561,7 @@ if cfg.EOGcorr.enable
         for i = 1:numel(cH)
             h(1) = scatter(i,cV(i),mkersize,cols(1,:),'filled');
             h(2) = scatter(i,cH(i),mkersize,cols(2,:),'filled');
-            cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 50] })'');', inputname(1), i, i);
+            cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 80] })'');', inputname(1), i, i);
             set(h,'buttondownfcn',cb);
         end
     end
@@ -597,7 +648,7 @@ if cfg.chancorr.enable
         for ichan = 1:size(c,1)
             for i = 1:size(c,2)
                 h = scatter(i,c(ichan,i),mkersize,cols(rem(icol+ichan-1,size(cols,1))+1,:),'filled');
-                cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 50] })'');', inputname(1), i, i);
+                cb = sprintf('eeg_SASICA(EEG, ''pop_prop( %s, 0, %d, findobj(''''tag'''',''''comp%d''''), { ''''freqrange'''', [1 80] })'');', inputname(1), i, i);
                 set(h,'buttondownfcn',cb);
             end
         end
@@ -1117,6 +1168,7 @@ for i = 1:numel(computed)
             'icatrialfoc'       'FocTr'        colors{3}
             'icaSNR'            'LoSNR'        colors{2}
             'icaresvar'         'ResV'          colors{2}
+            'ica2dipresvar'     '2DipResV'      colors{2}
             'icachancorrVEOG'   'CorrV'         colors{1}
             'icachancorrHEOG'   'CorrH'         colors{1}
             'icachancorrchans'  'CorrC'         colors{3}
@@ -1566,7 +1618,7 @@ function [nb,channame,strnames] = chnb(channame, varargin)
 %                   structure exists in the caller workspace.
 %   names         - Channel names, cell array of strings.
 %   strnames      - Channel names, one line character array.
-error(nargchk(1,2,nargin));
+narginchk(1,2);
 if nargin == 2
     labels = varargin{1};
 else
@@ -1648,7 +1700,7 @@ function idx = regexpcell(c,pat, cmds)
 % v2 Maximilien Chaumon 02/03/2010 changed input method.
 %       inv,ignorecase,exact,combine are replaced by cmds
 
-error(nargchk(2,3,nargin))
+narginchk(2,3)
 if not(iscellstr(c))
     error('input c must be a cell array of strings');
 end
@@ -1851,7 +1903,7 @@ function [tpts tvals] = timepts(timein, varargin)
 %   tvals         - values of EEG.times at points tpts
 %
 
-error(nargchk(1,2,nargin));
+narginchk(1,2);
 if nargin == 2
     times = varargin{1};
 else
@@ -2191,8 +2243,8 @@ if ~isempty(nopos_channels)
     disp(' ');
 end;
 
-pos_channels=setdiff(EEG.icachansind,nopos_channels); %pos_channels=setdiff(1:length(EEG.chanlocs),nopos_channels); NF edit
-
+% pos_channels=setdiff(1:length(EEG.chanlocs),nopos_channels);
+pos_channels=setdiff(EEG.icachansind,nopos_channels);
 %% Feature extraction
 
 disp(' ')
@@ -3180,8 +3232,9 @@ function [artcomps, info] = MARA(EEG)
 %%%%%%%%%%%%%%%%%%%%
 % extract channel labels
 clab = {};
-for i=1:length(EEG.icachansind) %i=1:length(EEG.chanlocs), NF edit
-    clab{i} = EEG.chanlocs(EEG.icachansind(i)).labels; %EEG.chanlocs(i).labels; NF edit
+% for i=1:length(EEG.chanlocs)
+for i=1:length(EEG.icachansind)
+    clab{i} = EEG.chanlocs(EEG.icachansind(i)).labels;
 end
 
 % cut to channel labels common with training data
